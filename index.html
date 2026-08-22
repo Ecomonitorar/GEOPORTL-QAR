@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geoportal de Monitoramento da Qualidade do Ar | ECO Tecnologia</title>
+  
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       CABEÇALHO (HEADER)
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="brand-container">
+      <img src="logo eco.png" alt="ECO Tecnologia e Análise Ambiental" class="brand-logo">
+      <div class="brand-divider"></div>
+      <div class="brand-titles">
+        <h1>
+          Geoportal da Qualidade do Ar
+          <span class="badge-tag">CONAMA 506/2024</span>
+        </h1>
+        <p>Monitoramento Contínuo • Mina VIGA • Médias de 24 Horas</p>
+      </div>
+    </div>
+
+    <!-- Controles Centrais -->
+    <div class="header-controls">
+      <!-- Seletor de Parâmetro -->
+      <div class="param-pill-group" id="paramSelector">
+        <button class="param-btn active" data-param="PTS" title="Partículas Totais em Suspensão (ABNT NBR 9547)">
+          <i data-lucide="wind" style="width:14px;height:14px;"></i> PTS
+        </button>
+        <button class="param-btn" data-param="MP10" title="Partículas Inaláveis (ABNT NBR 13412)">
+          <i data-lucide="cloud-fog" style="width:14px;height:14px;"></i> MP₁₀
+        </button>
+        <button class="param-btn" data-param="MP2.5" title="Partículas Respiráveis (Sem sensores na base atual)">
+          <i data-lucide="cloud" style="width:14px;height:14px;"></i> MP₂,₅
+        </button>
+      </div>
+
+      <!-- Seletor de Data & Player Temporal -->
+      <div class="timeline-control-card">
+        <button class="play-btn" id="btnPlayTimeline" title="Reproduzir evolução temporal">
+          <i data-lucide="play" id="playIcon" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="nav-btn" id="btnPrevDate" title="Data Anterior">
+          <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+        </button>
+        
+        <div class="date-select-wrapper">
+          <select id="dateSelect" class="date-select" title="Selecione a data de amostragem">
+            <!-- Preenchido dinamicamente via app.js -->
+          </select>
+          <i data-lucide="calendar" class="select-arrow" style="width:14px;height:14px;"></i>
+        </div>
+        
+        <button class="nav-btn" id="btnNextDate" title="Próxima Data">
+          <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+
+      <!-- Seletor de Estágio CONAMA -->
+      <div class="conama-stage-card">
+        <span class="conama-label">Estágio:</span>
+        <select id="conamaStageSelect" class="conama-select" title="Estágio da Resolução CONAMA 506/2024">
+          <option value="PI-1" selected>PI-1 (Vigente)</option>
+          <option value="PI-2">PI-2</option>
+          <option value="PI-3">PI-3</option>
+          <option value="PF">PF (Meta OMS)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="header-actions">
+      <button class="btn-icon-action" id="btnExportCSV" title="Exportar dados da data em CSV">
+        <i data-lucide="download" style="width:14px;height:14px;"></i>
+        <span>CSV</span>
+      </button>
+      <button class="btn-icon-action" id="btnOpenInfo" title="Sobre o Projeto e Normas">
+        <i data-lucide="info" style="width:14px;height:14px;"></i>
+        <span>Normas</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       FAIXA DE INDICADORES (KPIS)
+       ========================================================================== -->
+  <section class="kpi-strip" id="kpiStrip">
+    <!-- Card 1: Estações Monitoradas -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Estações Ativas</span>
+        <i data-lucide="map-pin" style="width:13px;height:13px;color:var(--text-muted);"></i>
+      </div>
+      <div class="kpi-value" id="kpiStationsCount">11 <span class="kpi-unit">pontos</span></div>
+      <div class="kpi-sub" id="kpiStationsSub">11 PTS • 5 MP10</div>
+    </div>
+
+    <!-- Card 2: Conformidade Geral -->
+    <div class="kpi-card kpi-compliance">
+      <div class="kpi-header">
+        <span class="kpi-title">Conformidade</span>
+        <span class="kpi-badge" id="kpiComplianceBadge" style="background:var(--eco-blue-light);color:var(--eco-blue);">100%</span>
+      </div>
+      <div class="kpi-value" id="kpiComplianceVal">100<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub" id="kpiComplianceSub">Atendendo limite legal</div>
+    </div>
+
+    <!-- Card 3: Confortável (< 50%) -->
+    <div class="kpi-card kpi-good">
+      <div class="kpi-header">
+        <span class="kpi-title">Confortável</span>
+        <span class="kpi-badge">&lt; 50%</span>
+      </div>
+      <div class="kpi-value" id="kpiGoodCount">0 <span class="kpi-unit">est.</span></div>
+      <div class="kpi-sub">Condição favorável</div>
+    </div>
+
+    <!-- Card 4: Atenção (50% a 100%) -->
+    <div class="kpi-card kpi-warning">
+      <div class="kpi-header">
+        <span class="kpi-title">Atenção</span>
+        <span class="kpi-badge">50-100%</span>
+      </div>
+      <div class="kpi-value" id="kpiWarningCount">0 <span class="kpi-unit">est.</span></div>
+      <div class="kpi-sub">Dentro do limite</div>
+    </div>
+
+    <!-- Card 5: Não Conforme (> 100%) -->
+    <div class="kpi-card kpi-danger">
+      <div class="kpi-header">
+        <span class="kpi-title">Não Conforme</span>
+        <span class="kpi-badge">&gt; 100%</span>
+      </div>
+      <div class="kpi-value" id="kpiDangerCount">0 <span class="kpi-unit">est.</span></div>
+      <div class="kpi-sub">Acima do padrão legal</div>
+    </div>
+
+    <!-- Card 6: Concentração Média -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Média do Dia</span>
+        <i data-lucide="bar-chart-2" style="width:13px;height:13px;color:var(--text-muted);"></i>
+      </div>
+      <div class="kpi-value" id="kpiMeanVal">-- <span class="kpi-unit">µg/m³</span></div>
+      <div class="kpi-sub" id="kpiMeanSub">Limite: 240 µg/m³</div>
+    </div>
+
+    <!-- Card 7: Ponto Mais Alto -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Pico do Dia</span>
+        <i data-lucide="trending-up" style="width:13px;height:13px;color:var(--text-muted);"></i>
+      </div>
+      <div class="kpi-value" id="kpiMaxVal">-- <span class="kpi-unit">µg/m³</span></div>
+      <div class="kpi-sub" id="kpiMaxStation">Estação: --</div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       LAYOUT PRINCIPAL (MAPA + DASHBOARD)
+       ========================================================================== -->
+  <main class="main-content-layout">
+    <!-- Painel do Mapa Interativo (Esquerda) -->
+    <div class="map-panel">
+      <div id="map"></div>
+
+      <!-- Controles Flutuantes do Mapa -->
+      <div class="map-floating-controls">
+        <!-- Alternador de Camada (Vetorial vs Satélite + Mapa de Calor) -->
+        <div class="map-control-group">
+          <button class="map-ctrl-btn active" id="btnLayerStreets" title="Mapa Vetorial Claro">
+            <i data-lucide="map" style="width:14px;height:14px;"></i> Mapa
+          </button>
+          <button class="map-ctrl-btn" id="btnLayerSatellite" title="Imagem de Satélite de Alta Resolução">
+            <i data-lucide="satellite" style="width:14px;height:14px;"></i> Satélite
+          </button>
+          <button class="map-ctrl-btn heatmap-btn" id="btnToggleHeatmap" title="Ativar/Desativar Camada de Dispersão / Mapa de Calor">
+            <i data-lucide="flame" style="width:14px;height:14px;"></i> Calor
+          </button>
+        </div>
+
+        <!-- Enquadramento e Clusters -->
+        <div class="map-control-group">
+          <button class="map-ctrl-btn" id="btnFitAll" title="Enquadrar Todas as Estações">
+            <i data-lucide="maximize-2" style="width:14px;height:14px;"></i> Enquadrar
+          </button>
+          <button class="map-ctrl-btn" id="btnFocusNorth" title="Focar no Cluster Norte (Cava / Operacional)">
+            Norte
+          </button>
+          <button class="map-ctrl-btn" id="btnFocusSouth" title="Focar no Cluster Sul (Comunidades)">
+            Sul
+          </button>
+        </div>
+
+        <!-- Ferramenta de Medição de Distância -->
+        <div class="map-control-group">
+          <button class="map-ctrl-btn measure-btn" id="btnMeasureDistance" title="Medir distância entre pontos no mapa">
+            <i data-lucide="ruler" style="width:14px;height:14px;"></i> Medir Distância
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Informativo da Medição Ativa -->
+      <div class="measure-info-card" id="measureCard">
+        <div class="measure-info-header">
+          <span><i data-lucide="ruler" style="width:13px;height:13px;display:inline;"></i> Modo de Medição</span>
+          <span id="measurePointCount">0 pts</span>
+        </div>
+        <p style="color:#cbd5e1;font-size:0.72rem;">Clique no mapa para adicionar pontos de medição.</p>
+        <div>
+          <span style="font-size:0.7rem;color:#94a3b8;">Distância Total:</span>
+          <div class="measure-result-val" id="measureDistanceVal">0.00 km</div>
+        </div>
+        <div class="measure-actions">
+          <button class="btn-measure-act" id="btnClearMeasure">Limpar</button>
+          <button class="btn-measure-act" id="btnCloseMeasure" style="background:#ef4444;">Encerrar</button>
+        </div>
+      </div>
+
+      <!-- Legenda do Mapa -->
+      <div class="map-legend-card">
+        <div class="legend-title">
+          <span>Legenda CONAMA 506/2024</span>
+          <span class="legend-limit-badge" id="legendLimitBadge">Lim: 240 µg/m³</span>
+        </div>
+        <div class="legend-items">
+          <div class="legend-item">
+            <div class="legend-item-left">
+              <span class="legend-color-dot dot-good"></span>
+              <span>Confortável (&lt; 50% limite)</span>
+            </div>
+            <span class="legend-item-count" id="legendCountGood">0</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-item-left">
+              <span class="legend-color-dot dot-warning"></span>
+              <span>Atenção (50% a 100%)</span>
+            </div>
+            <span class="legend-item-count" id="legendCountWarning">0</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-item-left">
+              <span class="legend-color-dot dot-danger"></span>
+              <span>Não Conforme (&gt; 100%)</span>
+            </div>
+            <span class="legend-item-count" id="legendCountDanger">0</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-item-left">
+              <span class="legend-color-dot dot-na"></span>
+              <span>Não Monitorado no Ponto</span>
+            </div>
+            <span class="legend-item-count" id="legendCountNA">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel Dashboard (Direita) -->
+    <aside class="dashboard-panel">
+      <!-- Abas de Navegação do Dashboard -->
+      <div class="dashboard-tabs">
+        <button class="dash-tab-btn active" data-tab="tab-overview">
+          <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Visão Geral
+        </button>
+        <button class="dash-tab-btn" data-tab="tab-table">
+          <i data-lucide="table" style="width:14px;height:14px;"></i> Tabela
+        </button>
+        <button class="dash-tab-btn" data-tab="tab-standards">
+          <i data-lucide="scale" style="width:14px;height:14px;"></i> Padrões Legais
+        </button>
+      </div>
+
+      <div class="dashboard-tab-content">
+        <!-- ABA 1: VISÃO GERAL & GRÁFICOS -->
+        <div class="tab-pane active" id="tab-overview">
+          <!-- Gráfico Comparativo por Estação na Data -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <span class="dash-card-title">
+                <i data-lucide="bar-chart-3" style="width:16px;height:16px;color:var(--eco-blue);"></i>
+                Comparativo por Estação na Data
+              </span>
+              <span style="font-size:0.7rem;color:var(--text-muted);" id="chartDateBadge">--</span>
+            </div>
+            <div class="chart-container-box">
+              <canvas id="chartDateComparison"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico de Evolução Temporal Média -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <span class="dash-card-title">
+                <i data-lucide="line-chart" style="width:16px;height:16px;color:var(--eco-green);"></i>
+                Evolução Temporal da Média (2025 - 2026)
+              </span>
+            </div>
+            <div class="chart-container-box">
+              <canvas id="chartTemporalTrend"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico Relação MP10 / PTS (Cluster Sul) -->
+          <div class="dash-card" id="cardRatioMP10PTS">
+            <div class="dash-card-header">
+              <span class="dash-card-title">
+                <i data-lucide="pie-chart" style="width:16px;height:16px;color:var(--eco-accent);"></i>
+                Relação MP₁₀ / PTS (Cluster Sul)
+              </span>
+              <span style="font-size:0.7rem;color:var(--text-muted);">Média: ~35%</span>
+            </div>
+            <div class="chart-container-box" style="height:180px;">
+              <canvas id="chartRatioMP10PTS"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: TABELA DE MONITORAMENTO -->
+        <div class="tab-pane" id="tab-table">
+          <div class="dash-card" style="padding:0.75rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+              <span class="dash-card-title">
+                <i data-lucide="list" style="width:16px;height:16px;color:var(--eco-primary);"></i>
+                Medições da Data
+              </span>
+              <input type="text" id="tableSearchInput" placeholder="Filtrar estação..." style="border:1px solid var(--border-color);padding:4px 8px;border-radius:var(--radius-sm);font-size:0.75rem;outline:none;font-family:inherit;width:130px;">
+            </div>
+            <div class="data-table-container">
+              <table class="eco-table">
+                <thead>
+                  <tr>
+                    <th>Estação</th>
+                    <th>Cluster</th>
+                    <th>Valor</th>
+                    <th>% Limite</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
+                <tbody id="monitoringTableBody">
+                  <!-- Inserido dinamicamente via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 3: ENQUADRAMENTO CONAMA 506/2024 -->
+        <div class="tab-pane" id="tab-standards">
+          <div class="dash-card">
+            <span class="dash-card-title" style="margin-bottom:0.5rem;">
+              <i data-lucide="book-open" style="width:16px;height:16px;color:var(--eco-primary);"></i>
+              Padrões Nacionais de Qualidade do Ar
+            </span>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;">
+              A <strong>Resolução CONAMA nº 506/2024</strong> estabelece os novos padrões nacionais de qualidade do ar e metas intermediárias progressivas para médias de 24 horas e anuais.
+            </p>
+
+            <table class="eco-table" style="margin-bottom:1rem;">
+              <thead>
+                <tr>
+                  <th>Poluente</th>
+                  <th>PI-1 (Vigente)</th>
+                  <th>PI-2</th>
+                  <th>PI-3</th>
+                  <th>PF (Meta)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>PTS</strong> (24h)</td>
+                  <td>240 µg/m³</td>
+                  <td>240 µg/m³</td>
+                  <td>240 µg/m³</td>
+                  <td>240 µg/m³</td>
+                </tr>
+                <tr>
+                  <td><strong>MP₁₀</strong> (24h)</td>
+                  <td>120 µg/m³</td>
+                  <td>100 µg/m³</td>
+                  <td>75 µg/m³</td>
+                  <td>45 µg/m³</td>
+                </tr>
+                <tr>
+                  <td><strong>MP₂,₅</strong> (24h)</td>
+                  <td>60 µg/m³</td>
+                  <td>50 µg/m³</td>
+                  <td>37 µg/m³</td>
+                  <td>15 µg/m³</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="background:var(--bg-page);padding:0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);font-size:0.75rem;">
+              <strong>Critérios de Coloração do Geoportal:</strong>
+              <ul style="margin-top:4px;padding-left:1.2rem;display:flex;flex-direction:column;gap:3px;">
+                <li><span style="color:var(--color-good);font-weight:700;">Verde:</span> &lt; 50% do limite (Condição Confortável)</li>
+                <li><span style="color:var(--color-warning);font-weight:700;">Amarelo:</span> 50% a 100% do limite (Condição de Atenção)</li>
+                <li><span style="color:var(--color-danger);font-weight:700;">Vermelho:</span> &gt; 100% do limite (Não Conforme)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ==========================================================================
+       DRAWER LATERAL DE DETALHAMENTO POR ESTAÇÃO
+       ========================================================================== -->
+  <div class="station-drawer-overlay" id="drawerOverlay"></div>
+  <div class="station-drawer" id="stationDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title-area">
+        <h2 id="drawerStationName">
+          <i data-lucide="radio" style="width:20px;height:20px;color:var(--eco-accent);"></i>
+          Estação QAR --
+        </h2>
+        <p id="drawerStationCluster">Cluster -- • Coordenadas UTM / WGS84</p>
+      </div>
+      <button class="drawer-close-btn" id="btnDrawerClose" title="Fechar painel">
+        <i data-lucide="x" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Métricas da Estação na Data Ativa -->
+      <div class="drawer-metric-grid">
+        <div class="drawer-metric-box">
+          <div class="drawer-metric-label">Resultado na Data</div>
+          <div class="drawer-metric-val" id="drawerValDate">-- <span style="font-size:0.75rem;font-weight:500;">µg/m³</span></div>
+          <div style="font-size:0.7rem;color:var(--text-muted);" id="drawerDateSelected">--/--/----</div>
+        </div>
+
+        <div class="drawer-metric-box">
+          <div class="drawer-metric-label">Status & % Limite</div>
+          <div class="drawer-metric-val" id="drawerPctLimit">--<span style="font-size:0.75rem;font-weight:500;">%</span></div>
+          <div id="drawerStatusBadge">
+            <span class="table-status-pill pill-good">Confortável</span>
+          </div>
+        </div>
+
+        <div class="drawer-metric-box">
+          <div class="drawer-metric-label">Média Histórica</div>
+          <div class="drawer-metric-val" id="drawerHistMean">-- <span style="font-size:0.75rem;font-weight:500;">µg/m³</span></div>
+          <div style="font-size:0.7rem;color:var(--text-muted);" id="drawerHistCount">96 amostras</div>
+        </div>
+
+        <div class="drawer-metric-box">
+          <div class="drawer-metric-label">Pico Máximo Registrado</div>
+          <div class="drawer-metric-val" id="drawerHistMax">-- <span style="font-size:0.75rem;font-weight:500;">µg/m³</span></div>
+          <div style="font-size:0.7rem;color:var(--text-muted);">Mínimo: <span id="drawerHistMin">--</span> µg/m³</div>
+        </div>
+      </div>
+
+      <!-- Gráfico Histórico Interativo -->
+      <div class="drawer-chart-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <span style="font-size:0.85rem;font-weight:800;color:var(--eco-primary-dark);display:flex;align-items:center;gap:6px;">
+            <i data-lucide="trending-up" style="width:16px;height:16px;color:var(--eco-green);"></i>
+            Série Histórica e Tendência Temporal
+          </span>
+          <div class="param-pill-group" id="drawerParamSelector" style="padding:2px;">
+            <button class="param-btn active" data-param="PTS" style="padding:3px 10px;font-size:0.72rem;">PTS</button>
+            <button class="param-btn" data-param="MP10" style="padding:3px 10px;font-size:0.72rem;">MP₁₀</button>
+          </div>
+        </div>
+        <div class="drawer-chart-container">
+          <canvas id="chartStationHistory"></canvas>
+        </div>
+      </div>
+
+      <!-- Dados Técnicos e Metodologia da Estação -->
+      <div class="dash-card">
+        <span class="dash-card-title" style="font-size:0.8rem;margin-bottom:6px;">
+          <i data-lucide="info" style="width:14px;height:14px;color:var(--eco-blue);"></i> Informações Cadastrais
+        </span>
+        <div style="font-size:0.75rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;">
+          <div><strong>Coordenadas UTM Fuso 23S:</strong> N: <span id="drawerUTMN">--</span> | E: <span id="drawerUTME">--</span></div>
+          <div><strong>Coordenadas Geográficas (WGS84):</strong> Lat: <span id="drawerLat">--</span> | Lng: <span id="drawerLng">--</span></div>
+          <div><strong>Metodologia Aplicada:</strong> <span id="drawerMethod">ABNT NBR 9547 / 13412</span></div>
+          <div><strong>Frequência de Coleta:</strong> Ciclo padrão de 6 dias (24 horas de amostragem contínua)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL INFORMATIVO
+       ========================================================================== -->
+  <div class="modal-backdrop" id="infoModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+          <i data-lucide="award" style="width:18px;height:18px;color:var(--eco-accent);"></i>
+          Geoportal da Qualidade do Ar • ECO Tecnologia
+        </h3>
+        <button class="drawer-close-btn" id="btnCloseInfoModal">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h4 style="font-weight:800;color:var(--eco-primary-dark);margin-bottom:4px;">Metodologias Normativas Aplicadas:</h4>
+        <ul style="padding-left:1.2rem;margin-bottom:1rem;">
+          <li><strong>ABNT NBR 9547:</strong> Material particulado em suspensão no ar ambiente — Determinação da concentração de partículas totais em suspensão (PTS) pelo método do amostrador de grande volume (AGV / Hi-Vol 24h).</li>
+          <li><strong>ABNT NBR 13412:</strong> Material particulado em suspensão no ar ambiente — Determinação da concentração de partículas inaláveis (MP₁₀) pelo método do amostrador de grande volume com separador inercial (24h).</li>
+          <li><strong>Resolução CONAMA nº 506/2024:</strong> Estabelece os novos padrões nacionais de qualidade do ar e diretrizes para o monitoramento contínuo da atmosfera.</li>
+        </ul>
+
+        <h4 style="font-weight:800;color:var(--eco-primary-dark);margin-bottom:4px;">Instruções de Uso do Geoportal:</h4>
+        <ul style="padding-left:1.2rem;margin-bottom:1rem;">
+          <li><strong>Navegação Temporal:</strong> Utilize o seletor de data ou o botão de <em>Play</em> para assistir à animação da dispersão e evolução ao longo do ano.</li>
+          <li><strong>Marcadores no Mapa:</strong> Exibem diretamente o valor numérico medido e a cor correspondente ao enquadramento normativo.</li>
+          <li><strong>Detalhamento:</strong> Clique em qualquer marcador no mapa para abrir a série histórica interativa e análise de tendência.</li>
+          <li><strong>Ferramenta de Régua:</strong> Clique no botão <em>"Medir Distância"</em> para traçar linhas e calcular distâncias geodésicas reais no terreno.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-icon-action" id="btnOkInfoModal" style="background:var(--eco-primary);color:#ffffff;border:none;padding:8px 18px;">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS & Leaflet Heatmap Plugin -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  
+  <!-- Base de Dados & Configurações CONAMA -->
+  <script src="data.js"></script>
+  <script src="conama_config.js"></script>
+  
+  <!-- Lógica Principal da Aplicação -->
+  <script src="app.js"></script>
+</body>
+</html>
