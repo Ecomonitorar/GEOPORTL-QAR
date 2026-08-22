@@ -102,6 +102,57 @@
   </header>
 
   <!-- ==========================================================================
+       BARRA DE AVALIAÇÃO POR PERÍODO / FILTRO TEMPORAL
+       ========================================================================== -->
+  <section class="period-filter-bar" id="periodFilterBar">
+    <div class="period-filter-inner">
+      <!-- Alternador de Modo (Data Única vs Período) -->
+      <div class="mode-toggle-group">
+        <button class="mode-btn active" id="btnModeSingle" title="Visualizar campanha individual de uma data específica">
+          <i data-lucide="calendar" style="width:13px;height:13px;"></i> Data Única
+        </button>
+        <button class="mode-btn" id="btnModePeriod" title="Avaliar médias e estatísticas consolidadas de um intervalo de datas">
+          <i data-lucide="calendar-range" style="width:13px;height:13px;"></i> Avaliação por Período
+        </button>
+      </div>
+
+      <!-- Controles de Período (Inputs de Data De/Até e Botão Aplicar) -->
+      <div class="period-inputs-card" id="periodInputsCard" style="display:none;">
+        <div class="period-input-field">
+          <label for="dateFrom">De:</label>
+          <input type="date" id="dateFrom" min="2025-01-04" max="2026-07-28" value="2026-01-01">
+        </div>
+        <div class="period-input-field">
+          <label for="dateTo">Até:</label>
+          <input type="date" id="dateTo" min="2025-01-04" max="2026-07-28" value="2026-07-28">
+        </div>
+        <button class="btn-period-apply" id="btnApplyPeriod" title="Filtrar dados pelo período selecionado">
+          <i data-lucide="search" style="width:13px;height:13px;"></i> Filtrar
+        </button>
+
+        <!-- Atalhos Rápidos de Período -->
+        <div class="period-presets">
+          <span class="preset-label">Atalhos:</span>
+          <button class="preset-btn" data-from="2025-01-04" data-to="2026-07-28">Histórico Total</button>
+          <button class="preset-btn" data-from="2025-01-01" data-to="2025-12-31">Ano 2025</button>
+          <button class="preset-btn" data-from="2026-01-01" data-to="2026-07-28">Ano 2026</button>
+          <button class="preset-btn" data-from="2025-05-01" data-to="2025-09-30">Seca 2025</button>
+          <button class="preset-btn" data-from="2026-01-01" data-to="2026-03-31">Chuvoso 2026</button>
+        </div>
+      </div>
+
+      <!-- Badge de Status do Período Ativo -->
+      <div class="period-status-badge" id="periodStatusBadge" style="display:none;">
+        <i data-lucide="filter" style="width:13px;height:13px;color:var(--eco-accent);"></i>
+        <span id="periodStatusText">Período: 01/01/2026 até 28/07/2026</span>
+        <button class="btn-clear-period" id="btnClearPeriod" title="Voltar para modo de data única">
+          <i data-lucide="x" style="width:12px;height:12px;"></i> Limpar
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
        FAIXA DE INDICADORES (KPIS)
        ========================================================================== -->
   <section class="kpi-strip" id="kpiStrip">

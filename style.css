@@ -334,6 +334,182 @@ body {
 }
 
 /* ==========================================================================
+   BARRA DE AVALIAÇÃO POR PERÍODO
+   ========================================================================== */
+.period-filter-bar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.4rem 1.25rem;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.period-filter-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.mode-toggle-group {
+  display: flex;
+  background: var(--bg-subtle);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-btn:hover {
+  color: var(--text-main);
+}
+
+.mode-btn.active {
+  background: var(--eco-primary);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(47, 68, 99, 0.2);
+}
+
+.period-inputs-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 3px 8px;
+  flex-wrap: wrap;
+}
+
+.period-input-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.period-input-field input[type="date"] {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 0.76rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--eco-primary-dark);
+  outline: none;
+}
+
+.period-input-field input[type="date"]:focus {
+  border-color: var(--eco-blue);
+}
+
+.btn-period-apply {
+  background: var(--eco-blue);
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-period-apply:hover {
+  background: #0284c7;
+}
+
+.period-presets {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-left: 1px solid var(--border-color);
+  padding-left: 8px;
+  margin-left: 4px;
+}
+
+.preset-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.preset-btn {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+  background: var(--eco-blue-light);
+  color: var(--eco-blue);
+  border-color: var(--eco-blue);
+}
+
+.period-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--eco-blue-light);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: var(--eco-primary-dark);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.btn-clear-period {
+  background: rgba(15, 23, 42, 0.08);
+  border: none;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.btn-clear-period:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* ==========================================================================
    FAIXA DE INDICADORES (KPIS)
    ========================================================================== */
 .kpi-strip {
